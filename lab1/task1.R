@@ -3,12 +3,14 @@ data <- read.csv("data.csv", sep=",", header=TRUE, stringsAsFactors=FALSE)
 data$ДатаРождения <- as.Date(data$ДатаРождения, format="%d.%m.%Y")
 data$ДатаПервойПодачиЗаявления <- as.Date(data$ДатаПервойПодачиЗаявления, format="%d.%m.%Y")
 
-data$Возраст <- as.numeric(difftime(data$ДатаПервойПодачиЗаявления, data$ДатаРождения, units = "days")) / 365
+data$Возраст <- as.numeric(difftime(data$ДатаПервойПодачиЗаявления, data$ДатаРождения, units = "days")) %/% 365
 
 data[is.na(data)] <- 0
 data$СуммаБаллов <- data$Оценка1 + data$Оценка2 + data$Оценка3
 
-cairo_pdf("lab1.pdf", width = 8, height = 6, family = "DejaVu Serif", onefile =TRUE)
+mean_score_by_age <- aggregate(СуммаБаллов ~ Возраст, data = data, mean)
+
+cairo_pdf("lab1.pdf", width = 8, height = 6, family = "DejaVu Serif", onefile = TRUE)
 
 hist(
     data$СуммаБаллов, 
@@ -19,9 +21,10 @@ hist(
     )
 
 plot(
-    data$Возраст,
-    data$СуммаБаллов,  
+    mean_score_by_age$Возраст,
+    mean_score_by_age$СуммаБаллов,  
     main="Сумма баллов vs Возраст", 
+    type = "b",
     xlab="Возраст", 
     ylab="Сумма баллов", 
     pch=19, 
@@ -34,23 +37,43 @@ boxplot(
     main="Сумма баллов по странам", 
     xlab="Страна", 
     ylab="Сумма баллов",
+    col="blue",
     las = 2
     )
 
+# boxplot(
+#     СуммаБаллов ~ УровеньПодготовки, 
+#     data=data, 
+#     main="Сумма баллов по уровню подготовки", 
+#     xlab="Уровень подготовки", 
+#     ylab="Сумма баллов"
+#     )
+
 boxplot(
-    СуммаБаллов ~ УровеньПодготовки, 
+    СуммаБаллов ~ ФормаОбучения, 
     data=data, 
-    main="Сумма баллов по уровню подготовки", 
-    xlab="Уровень подготовки", 
-    ylab="Сумма баллов"
+    main="Сумма баллов по форме обучения", 
+    xlab="Форма обучения", 
+    ylab="Сумма баллов",
+    col="blue"
+    )
+
+boxplot(
+    СуммаБаллов ~ ФормаОбучения, 
+    data=data, 
+    main="Сумма баллов по форме обучения", 
+    xlab="Форма обучения", 
+    ylab="Сумма баллов",
+    col="blue"
     )
 
 boxplot(
     СуммаБаллов ~ ОснованиеПоступления, 
     data=data, 
-    main="Сумма баллов по форме обучения", 
+    main="Сумма баллов по основанию поступелния", 
     xlab="Форма обучения", 
-    ylab="Сумма баллов"
+    ylab="Сумма баллов",
+    col="blue"
     )
 
 boxplot(
@@ -59,6 +82,7 @@ boxplot(
     main="Сумма баллов по направлениям подготовки", 
     xlab="Направление подготовки", 
     ylab="Сумма баллов", 
+    col="blue",
     las=2, 
     cex.axis=0.5
     )
@@ -103,6 +127,25 @@ get_variance <- function(filtered_data) {
   return (M_x2 - M_x^2) 
 }
 
+#  ========================  ВОЗРАСТ ======================== 
+
+ unique_ages <- sort(unique(na.omit(data$Возраст)))
+
+for (age in unique_ages) {
+  cat('\n',"=======", age, "=======", '\n')
+  cat("Среднее", ": ", get_mean(data[data$Возраст == age, ]), "\n")
+
+  cat("Медиана", ": ", get_median(data[data$Возраст == age, ]), "\n")
+                         
+  cat("Мода", ": ", get_mode(data[data$Возраст == age, "СуммаБаллов"]), "\n")
+
+  cat("Дисперсия", ": ", get_variance(data[data$Возраст == age, "СуммаБаллов"]), "\n")
+
+  cat("СКO", ": ", get_variance(data[data$Возраст == age, "СуммаБаллов"])^(0.5), "\n")
+}
+
+#  ========================  СТРАНА ======================== 
+
 countries <- unique(na.omit(data$Страна))
 
 for (country in countries) {
@@ -116,4 +159,55 @@ for (country in countries) {
   cat("Дисперсия", ": ", get_variance(data[data$Страна == country, "СуммаБаллов"]), "\n")
 
   cat("СКO", ": ", get_variance(data[data$Страна == country, "СуммаБаллов"])^(0.5), "\n")
+}
+
+#  ========================  ФОРМА ОБУЧЕНИЯ ======================== 
+
+education_from <- unique(na.omit(data$ФормаОбучения))
+
+for (form in education_from) {
+  cat('\n',"=======", form, "=======", '\n')
+  cat("Среднее", ": ", get_mean(data[data$ФормаОбучения == form, ]), "\n")
+
+  cat("Медиана", ": ", get_median(data[data$ФормаОбучения == form, ]), "\n")
+                         
+  cat("Мода", ": ", get_mode(data[data$ФормаОбучения == form, "СуммаБаллов"]), "\n")
+
+  cat("Дисперсия", ": ", get_variance(data[data$ФормаОбучения == form, "СуммаБаллов"]), "\n")
+
+  cat("СКO", ": ", get_variance(data[data$ФормаОбучения == form, "СуммаБаллов"])^(0.5), "\n")
+}
+
+#  ========================  ОСНОВАНИЕ ПОСТУПЛЕНИЯ ======================== 
+
+entry_basis <- unique(na.omit(data$ОснованиеПоступления))
+
+for (basis in entry_basis) {
+  cat('\n',"=======", basis, "=======", '\n')
+  cat("Среднее", ": ", get_mean(data[data$ОснованиеПоступления == basis, ]), "\n")
+
+  cat("Медиана", ": ", get_median(data[data$ОснованиеПоступления == basis, ]), "\n")
+                         
+  cat("Мода", ": ", get_mode(data[data$ОснованиеПоступления == basis, "СуммаБаллов"]), "\n")
+
+  cat("Дисперсия", ": ", get_variance(data[data$ОснованиеПоступления == basis, "СуммаБаллов"]), "\n")
+
+  cat("СКO", ": ", get_variance(data[data$ОснованиеПоступления == basis, "СуммаБаллов"])^(0.5), "\n")
+}
+
+#  ========================  ОСНОВАНИЕ ПОСТУПЛЕНИЯ ======================== 
+
+departments <- unique(na.omit(data$СпециальностьНаименование))
+
+for (dpmnt in departments) {
+  cat('\n',"=======", dpmnt, "=======", '\n')
+  cat("Среднее", ": ", get_mean(data[data$СпециальностьНаименование == dpmnt, ]), "\n")
+
+  cat("Медиана", ": ", get_median(data[data$СпециальностьНаименование == dpmnt, ]), "\n")
+                         
+  cat("Мода", ": ", get_mode(data[data$СпециальностьНаименование == dpmnt, "СуммаБаллов"]), "\n")
+
+  cat("Дисперсия", ": ", get_variance(data[data$СпециальностьНаименование == dpmnt, "СуммаБаллов"]), "\n")
+
+  cat("СКO", ": ", get_variance(data[data$СпециальностьНаименование == dpmnt, "СуммаБаллов"])^(0.5), "\n")
 }
